@@ -1,0 +1,94 @@
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import javax.persistence.*;
+
+@Entity
+@Table(name = "students")
+class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    private String name;
+    private int age;
+
+    public Student() {}
+    public Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
+}
+
+public class HibernateUtil {
+    private static SessionFactory factory;
+    static {
+        try {
+            factory = new Configuration().configure("hibernate.cfg.xml").addAnnotatedClass(Student.class).buildSessionFactory();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static SessionFactory getSessionFactory() {
+        return factory;
+    }
+}
+
+public class StudentDAO {
+    public void saveStudent(Student student) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+        session.save(student);
+        tx.commit();
+        session.close();
+    }
+
+    public Student getStudent(int id) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Student student = session.get(Student.class, id);
+        session.close();
+        return student;
+    }
+
+    public void updateStudent(int id, String name, int age) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+        Student student = session.get(Student.class, id);
+        student.setName(name);
+        student.setAge(age);
+        session.update(student);
+        tx.commit();
+        session.close();
+    }
+
+    public void deleteStudent(int id) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+        Student student = session.get(Student.class, id);
+        session.delete(student);
+        tx.commit();
+        session.close();
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        StudentDAO studentDAO = new StudentDAO();
+        
+        Student student = new Student("Alice", 22);
+        studentDAO.saveStudent(student);
+        
+        Student fetchedStudent = studentDAO.getStudent(student.getId());
+        System.out.println("Fetched Student: " + fetchedStudent.getName() + ", Age: " + fetchedStudent.getAge());
+        
+        studentDAO.updateStudent(student.getId(), "Alice Johnson", 23);
+        
+        studentDAO.deleteStudent(student.getId());
+    }
+}
